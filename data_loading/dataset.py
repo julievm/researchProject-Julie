@@ -46,6 +46,7 @@ class FatherDataset(torch.utils.data.Dataset):
 
         keys = [(ex['pid'], ex['ini_time'], ex['end_time']) for ex in examples]
         items = {}
+        #ex_name here is accel, should be changed to audio
         for ex_name, extractor in self.extractors.items():
             items[ex_name] = extractor.extract_multiple(keys)
             #print("ex_name : ", type(ex_name), "   !!!  extractor  ", type(extractor))

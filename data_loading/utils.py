@@ -11,6 +11,8 @@ import pandas as pd
 # csv_path = "../preprocess/audio/vad/"
 
 # csv file path for successful training dataset.
+from scipy.interpolate import interp1d
+
 csv_path = "../preprocess/audio/successful_train_samples/"
 
 # csv file path for successful testing dataset.
@@ -24,6 +26,17 @@ test_csv_path_all_sample = "../preprocess/audio/all_sample/"
 
 # txt output file of customized check
 txt_path = "../preprocess/audio/output_file/"
+
+
+
+balloon_pop_1_video_frame = 23030 # to
+balloon_pop_1_accel_frame = 45977 + 19/34
+
+balloon_pop_2_video_frame = 74844
+balloon_pop_2_accel_frame = 47706 + 23/28
+
+balloon_pop_3_video_frame = 166836.5
+balloon_pop_3_accel_frame = 50776 + 30.5/32
 
 
 def reset_examples_ids(examples):
@@ -53,6 +66,7 @@ class Maker():
 
         self.all_samples_vad = {}
         if all_sample_path is not None:
+
             self.load_all_vad(all_sample_path)
 
         self.examples = None
@@ -61,11 +75,10 @@ class Maker():
         self.all_samples = None
 
     def load_accel(self, accel_path):
-        # self.accel = pickle.load(open(accel_path, 'rb'))
         self.accel = pickle.load(open('../data/subj_accel_interp.pkl', 'rb'))
 
     def load_vad(self, vad_path):
-        print(" in load vad ")
+
         # load csv directly
         self.vad = {}
         pid_list = [2, 3, 4, 5, 7, 10, 11, 17, 22, 23, 27, 34, 35]
@@ -81,11 +94,16 @@ class Maker():
         start_pid = [2, 3, 4, 7, 10, 11, 17, 22, 23, 34]
         for i in start_pid:
             fpath = os.path.join(unsuccessful_vad, f'{i}.csv')
-            print(unsuccessful_vad)
             self.unsuccessful_vad[i] = pd.read_csv(fpath, header=None).to_numpy()
 
-        if len(self.vad) == 0:
-            print('load_vad called but nothing loaded.')
+        if len(self.unsuccessful_vad) == 0:
+            print('load_unsuccessful_vad called but nothing loaded.')
+
+    def _interp_vad(self, vad, in_fs, out_fs):
+        t = np.arange(0, len(vad) / in_fs, 1/in_fs)
+        f = interp1d(t, vad, kind='nearest')
+        tnew = np.arange(0, len(vad) / in_fs, 1/out_fs)
+        return f(tnew)
 
     def load_all_vad(self, all_vad):
         pid_list = [2, 3, 4, 5, 7, 10, 11, 17, 22, 23, 27, 34, 35]
@@ -96,32 +114,33 @@ class Maker():
 
             self.all_samples_vad[i] = pd.read_csv(fpath, header=None).to_numpy()
 
-        if len(self.vad) == 0:
-            print('load_vad called but nothing loaded.')
+
+        if len(self.all_samples_vad) == 0:
+            print('load_all_vad called but nothing loaded.')
 
     # set time window
-    def _get_vad(self, pid, ini_time, end_time, vad_fs=100):
+    def _get_vad(self, pid, ini_time, end_time, fs):
         # note audio (vad) and video start at the same time
         if pid not in self.vad:
             return None
 
-        return self.vad[pid][ini_time * 100: end_time * 100].flatten()
+        return self.vad[pid][ini_time * fs: end_time * fs].flatten()
 
-    def _get_unsuccessful_vad(self, pid, ini_time, end_time, vad_fs=100):
+    def _get_unsuccessful_vad(self, pid, ini_time, end_time, fs):
         # note audio (vad) and video start at the same time
         if pid not in self.unsuccessful_vad:
             return None
 
-        return self.unsuccessful_vad[pid][ini_time * 100: end_time * 100].flatten()
+        return self.unsuccessful_vad[pid][ini_time * fs: end_time * fs].flatten()
 
-    def _get_all_vad(self, pid, ini_time, end_time, vad_fs=100):
+    def _get_all_vad(self, pid, ini_time, end_time, fs):
         # note audio (vad) and video start at the same time
         if pid not in self.all_samples_vad:
             return None
 
-        return self.all_samples_vad[pid][ini_time * 100: end_time * 100].flatten()
+        return self.all_samples_vad[pid][ini_time * fs: end_time * fs].flatten()
 
-    def make_train_examples(self, windowSize):
+    def make_train_examples(self, windowSize, feature_fs):
 
         examples = list()
         example_id = 0
@@ -130,7 +149,7 @@ class Maker():
         # loop over participants
         for i in valid_list:
 
-            print("pid : ", i)
+            #print("pid : ", i)
 
             time_window_list = []
             # read train participant csv
@@ -144,12 +163,12 @@ class Maker():
 
             # create dict for successful intention training dataset.
             for j in range(0, len(time_window_list)):
-                print("in train list : ", j, "  , ", len(time_window_list))
                 ini_time = time_window_list[j][0]
                 end_time = time_window_list[j][1]
 
-                temp_vad = self._get_vad(i, ini_time, end_time)
-                # print("temp vad: ", temp_vad)
+                temp_vad = self._get_vad(i, ini_time, end_time, 100)
+                interp_vad = self._interp_vad(temp_vad, 100, feature_fs)
+
 
                 examples.append({
                     'id': example_id,
@@ -157,7 +176,7 @@ class Maker():
                     'ini_time': ini_time,
                     'end_time': end_time,
                     # data
-                    'vad': temp_vad
+                    'vad': interp_vad
                 })
                 example_id += 1
 
@@ -165,7 +184,7 @@ class Maker():
 
         return examples
 
-    def make_test_examples(self, index_s, windowSize):
+    def make_test_examples(self, index_s, windowSize, feature_fs):
         test_examples = list()
         test_example_id = 0
 
@@ -174,7 +193,6 @@ class Maker():
         # loop over participants
         for i in valid_list:
 
-            print("pid : ", i)
 
             # generate test dataset time window of successful intention case:
             test_time_window_list = []
@@ -187,12 +205,14 @@ class Maker():
 
             # create dict for successful intention testing dataset.
             for j in range(0, len(test_time_window_list)):
-                print("in test list : ", j, "  , ", len(test_time_window_list))
+
                 test_ini_time = test_time_window_list[j][0]
                 test_end_time = test_time_window_list[j][1]
 
-                test_temp_vad = self._get_vad(i, test_ini_time, test_end_time)
-                # print("temp vad: ", temp_vad)
+                test_temp_vad = self._get_vad(i, test_ini_time, test_end_time, 100)
+
+                interp_vad = self._interp_vad(test_temp_vad, 100, feature_fs)
+
 
                 test_examples.append({
                     'id': test_example_id,
@@ -200,7 +220,7 @@ class Maker():
                     'ini_time': test_ini_time,
                     'end_time': test_end_time,
                     # data
-                    'vad': test_temp_vad
+                    'vad': interp_vad
                 })
                 test_example_id += 1
 
@@ -208,7 +228,7 @@ class Maker():
 
         return test_examples
 
-    def make_all_examples(self, index_s, windowSize):
+    def make_all_examples(self, index_s, windowSize, feature_fs):
         """
         :param unsuccessful_pid: pid number
         :param index_s: the number of experiment
@@ -221,7 +241,6 @@ class Maker():
         for i in valid_list:
             all_test_time_window_list = []
 
-            # unsuccessful_test_time_window_list = []
             with open(test_csv_path_all_sample +  str(windowSize) + "s/" + str(index_s) + '_' + str(i) + ".csv") as infile:
                 all_reader = csv.reader(infile)
 
@@ -231,12 +250,14 @@ class Maker():
                                                                 int(all_sample_line[1])]))
 
             for j in range(0, len(all_test_time_window_list)):
-                print("in test list : ", j, "  , ", len(all_test_time_window_list))
                 all_ini_time = all_test_time_window_list[j][0]
                 all_end_time = all_test_time_window_list[j][1]
 
-                all_vad = self._get_all_vad(i, all_ini_time, all_end_time)
-                # print("temp vad: ", temp_vad)
+                all_vad = self._get_all_vad(i, all_ini_time, all_end_time, 100)
+
+                interp_vad = self._interp_vad(all_vad, 100, feature_fs)
+
+
 
                 examples.append({
                     'id': example_id,
@@ -244,7 +265,7 @@ class Maker():
                     'ini_time': all_ini_time,
                     'end_time': all_end_time,
                     # data
-                    'vad': all_vad
+                    'vad': interp_vad
                 })
 
                 example_id += 1
@@ -252,7 +273,7 @@ class Maker():
         self.examples = examples
         return examples
 
-    def make_unsuccessful_examples(self, unsuccessful_pid, index_s, windowSize, category:str):
+    def make_unsuccessful_examples(self, unsuccessful_pid, index_s, windowSize, feature_fs, category:str):
         """
         :param unsuccessful_pid: pid number
         :param index_s: the number of experiment
@@ -265,7 +286,7 @@ class Maker():
             all_test_time_window_list = []
 
             if unsuccessful_pid.__contains__(i):
-                # unsuccessful_test_time_window_list = []
+
                 with open(test_csv_path_unsuccessful + category + "/" + str(windowSize) +"s/" + str(index_s) + '_' + str(i) + ".csv") as infile:
                     all_reader = csv.reader(infile)
 
@@ -275,12 +296,14 @@ class Maker():
                                                                     int(unsuccessful_line[1])]))
 
                 for j in range(0, len(all_test_time_window_list)):
-                    print("in test list : ", j, "  , ", len(all_test_time_window_list))
+
                     all_ini_time = all_test_time_window_list[j][0]
                     all_end_time = all_test_time_window_list[j][1]
 
-                    unsuccessful_temp_vad = self._get_unsuccessful_vad(i, all_ini_time, all_end_time)
-                    # print("temp vad: ", temp_vad)
+                    unsuccessful_temp_vad = self._get_unsuccessful_vad(i, all_ini_time, all_end_time, 100)
+
+                    interp_vad = self._interp_vad(unsuccessful_temp_vad, 100, feature_fs)
+
 
                     examples.append({
                         'id': example_id,
@@ -288,7 +311,7 @@ class Maker():
                         'ini_time': all_ini_time,
                         'end_time': all_end_time,
                         # data
-                        'vad': unsuccessful_temp_vad
+                        'vad': interp_vad
                     })
 
                     example_id += 1
@@ -308,3 +331,13 @@ class Maker():
                 continue
 
             new_examples.append(ex)
+
+
+video_seconds_to_accel_sample = interp1d(
+    [
+        balloon_pop_1_video_frame/29.97,
+        balloon_pop_3_video_frame/29.97
+    ], [
+        balloon_pop_1_accel_frame,
+        balloon_pop_3_accel_frame
+    ], fill_value="extrapolate")

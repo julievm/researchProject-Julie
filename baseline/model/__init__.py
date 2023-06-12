@@ -26,25 +26,14 @@ class SegmentationFusionModel(torch.nn.Module):
         """
         masks = []
         if 'accel' in batch:
-            #print("label : ", batch)
-            #print("input ", batch['accel'].shape, "  ", batch['accel'])
-            f = self.accel_feature_extractor(batch['accel'])
-            #print(" in train 1: ", f)
-            u = self.accel_head(f)
-            #print(" in train 2: ", u.shape)
-            #print("in train 2 : ", u)
 
-            if u.size(dim=0) == 100:
-                print(u.size())
-                print("reshape ?")
-                u = u[None, :]
-                print(u.size())
+            f = self.accel_feature_extractor(batch['accel'])
+
+            u = self.accel_head(f)
+
 
 
             masks.append(u)
-
-            print("u:", u.shape)
-
 
 
 
@@ -53,6 +42,4 @@ class SegmentationFusionModel(torch.nn.Module):
         masks = masks.mean(dim=2)
 
 
-        #print("mask shape : ", masks.shape)
-        # average over the new mask dim
         return masks

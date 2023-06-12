@@ -38,10 +38,9 @@ def do_cross_validation(do_train, ds, last_test_ds, input_modalities, seed, pref
 
     last_test_set_idx = np.arange(len(last_test_ds.examples))
 
-    # print(" len of test ds : ", len(test_ds), " type : ", type(test_ds))
+
     cv_splits = list(GroupKFold(n_splits=3).split(range(len(ds)), groups=ds.get_groups()))
-    # for i in range(0, len(cv_splits)):
-    #     print("type : ", type(cv_splits[i]),"  : ", len(cv_splits[i][0]), "  # ", len(cv_splits[i][1]))
+
     all_results = []
     roc_list = None
     cross_validation_roc = []
@@ -75,7 +74,6 @@ def do_cross_validation(do_train, ds, last_test_ds, input_modalities, seed, pref
         # val_samples_weight = torch.tensor([val_weight[int(t)] for t in temp_val_tensor])
         # print("val : ", val_weight, val_samples_weight)
 
-        ################################################
 
         train_ds = FatherDatasetSubset(ds, train_idx, eval=False)
         test_ds = FatherDatasetSubset(ds, test_idx, eval=True)
@@ -97,21 +95,13 @@ def do_cross_validation(do_train, ds, last_test_ds, input_modalities, seed, pref
                                                                         weights_path=weights_path)
             model = trainer.model
 
-            torch.save(model.state_dict(), "!!!.pt")
+            torch.save(model.state_dict(), "model_temp.pt")
 
-            # if best_model is None:
-            #     best_model = model
-            #     best_model_performance = roc_list
-            #
-            # else:
-            #     if roc_list[-1] > best_model_performance[-1]:
-            #         best_model = model
-            #         best_model_performance = roc_list
         else:
 
-            # model = System.load_from_checkpoint(checkpoint_path=weights_path)
+
             model = System('accel', 'classification')
-            model.load_state_dict(torch.load("model_version_1_20_10.pt"))
+            model.load_state_dict(torch.load("model_temp.pt"))
 
         # select the best model
 
@@ -124,7 +114,7 @@ def do_cross_validation(do_train, ds, last_test_ds, input_modalities, seed, pref
         if do_train:
             roc_list.append(f)
             cross_validation_roc.append(roc_list)
-            # torch.save(best_model.state_dict(), "best_model.pt")
+
 
         clear_output(wait=False)
 
@@ -153,7 +143,6 @@ def do_run(examples, test_examples, input_modalities,
     extractors = {}
 
     if 'accel' in input_modalities:
-        # accel_ds_path = os.path.join(processed_accel_path, 'subj_accel_interp.pkl')
         # get accel data
         accel_ds_path = '../data/subj_accel_interp.pkl'
         extractors['accel'] = AccelExtractor(accel_ds_path)
@@ -187,27 +176,30 @@ def do_run(examples, test_examples, input_modalities,
 
 
 def get_table(index_i, Num, windowSize, do_train=True, deterministic=True):
-    # examples = pickle.load(open(examples_path, 'rb'))
-    # data set
+
     train_examples = pickle.load(open("../data/train_pkl/" + str(windowSize) + "s/" + "_INTS_train.pkl", 'rb'))
     test_examples = None
 
     if Num == 2:
+        print("in experiment 2")
         test_examples = pickle.load(open("../data/successful_test_pkl/" + str(windowSize) + "s/" + str(index_i) +"_INTS_test.pkl", 'rb'))
 
     elif Num == 1:
+        print("in experiment 1")
         test_examples = pickle.load(open("../data/all_test_pkl/" + str(windowSize) + "s/" + str(index_i) +"_INTS_test.pkl", 'rb'))
 
     elif Num == 3:
-        print("正确")
+        print("in experiment 3")
         test_examples = pickle.load(
             open("../data/unsuccessful_test_pkl/all_unsuccessful/" + str(windowSize) + "s/" + str(index_i) + "_INTS_test.pkl", 'rb'))
 
     elif Num == 4:
+        print("in experiment 4")
         test_examples = pickle.load(
             open("../data/unsuccessful_test_pkl/start/" + str(windowSize) + "s/" + str(index_i) + "_INTS_test.pkl", 'rb'))
 
     elif Num == 5:
+        print("in experiment 5")
         test_examples = pickle.load(
             open("../data/unsuccessful_test_pkl/continue/" + str(windowSize) + "s/" + str(index_i) + "_INTS_test.pkl", 'rb'))
 
@@ -237,7 +229,7 @@ def get_table(index_i, Num, windowSize, do_train=True, deterministic=True):
         res['-'.join(input_modalities)] = run_results
     return res, cross_validation_roc  # res
 
-def main(train, Num, windowSize, numberOfExperiment=100):
+def main(train, experiment_num, windowSize, numberOfExperiment):
     try:
         if train:
             res, cross_validation_roc = get_table(0, 0, windowSize, do_train=True, deterministic=False)
@@ -249,14 +241,14 @@ def main(train, Num, windowSize, numberOfExperiment=100):
 
         else:
             # output result in txt file.
-            with open('./result/' + "experiment" + str(Num) + "/"+ str(windowSize) + "s/" + "performance.txt", 'w') as f:
+            with open('./result/' + "experiment" + str(experiment_num) + "/" + str(windowSize) + "s/" + "performance_new_temp_1.txt", 'w') as f:
                 metric_list = []
                 precision_list = []
                 recall_list = []
 
-                for index_q in range(0, 100):
-                    print("index : ", index_q)
-                    res, cross_validation_roc = get_table(index_q, Num, windowSize, do_train=False, deterministic=False)
+                for index_q in range(0, numberOfExperiment):
+                    print("experiment : ", experiment_num, "  index : ", index_q)
+                    res, cross_validation_roc = get_table(index_q, experiment_num, windowSize, do_train=False, deterministic=False)
                     print(res)
                     for ks, vs in res.items():
                         for k, v in vs.items():
@@ -279,20 +271,21 @@ def main(train, Num, windowSize, numberOfExperiment=100):
 
 
 if __name__ == '__main__':
-    # train model
-    main(True, 0, 1, 100)
+    #train model
+    main(True, experiment_num=0, windowSize=1, numberOfExperiment=100)
 
     # experiment 1 done
-    #main(False, 1, 1, 100)
+    #main(False, experiment_num=1, windowSize=1, numberOfExperiment=100)
 
     # experiment 2 done
-    #main(False, 2, 1, 100)
+    #main(False, experiment_num=2, windowSize=2, numberOfExperiment=100)
 
     # experiment 3
-    #main(False, 3, 1, 100)
+    #main(False, experiment_num=3, windowSize=4, numberOfExperiment=100)
 
     # experiment 4
-    #main(False, 4, 1, 100)
+    #main(False, experiment_num=4, windowSize=4, numberOfExperiment=100)
 
     # experiment 5
-    #main(False, 5, 1, 100)
+    #main(False, experiment_num=5, windowSize=4, numberOfExperiment=100)
+

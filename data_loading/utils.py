@@ -50,11 +50,15 @@ Generate information for example.pkl file
 
 
 class Maker():
-    def __init__(self, accel_path=None, vad_path=None, unsuccessful_vad_path=None, all_sample_path=None):
+    def __init__(self, accel_path=None, audio_path=None, vad_path=None, unsuccessful_vad_path=None, all_sample_path=None):
 
         self.accel = {}
         if accel_path is not None:
             self.load_accel(accel_path)
+
+        self.audio = {}
+        if audio_path is not None:
+            self.load_audio(audio_path)
 
         self.vad = {}
         if vad_path is not None:
@@ -76,6 +80,9 @@ class Maker():
 
     def load_accel(self, accel_path):
         self.accel = pickle.load(open('../data/subj_accel_interp.pkl', 'rb'))
+
+    def load_audio(self, audio_path):
+        self.audio = pickle.load(open('../data/audio.pkl', 'rb'))
 
     def load_vad(self, vad_path):
 

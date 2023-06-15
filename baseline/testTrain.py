@@ -19,7 +19,7 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 
 from data_loading.dataset import FatherDataset, FatherDatasetSubset
-from data_loading.extractors import AccelExtractor
+from data_loading.extractors import AccelExtractor, AudioExtractor
 
 from train import System, train, test
 
@@ -95,13 +95,13 @@ def do_cross_validation(do_train, ds, last_test_ds, input_modalities, seed, pref
                                                                         weights_path=weights_path)
             model = trainer.model
 
-            torch.save(model.state_dict(), "model_temp.pt")
+            torch.save(model.state_dict(), "model_temp_accel.pt")
 
         else:
 
 
-            model = System('accel', 'classification')
-            model.load_state_dict(torch.load("model_temp.pt"))
+            model = System(['accel', 'audio'], 'classification')
+            model.load_state_dict(torch.load("model_temp_accel.pt"))
 
         # select the best model
 
@@ -146,6 +146,10 @@ def do_run(examples, test_examples, input_modalities,
         # get accel data
         accel_ds_path = '../data/subj_accel_interp.pkl'
         extractors['accel'] = AccelExtractor(accel_ds_path)
+
+    if 'audio' in input_modalities:
+        audio_ds_path = '../data/audio.pkl'
+        extractors['audio'] = AudioExtractor(audio_ds_path)
 
     # extract data based on features selected
     ds = FatherDataset(examples, extractors)
@@ -211,6 +215,8 @@ def get_table(index_i, Num, windowSize, do_train=True, deterministic=True):
         # ('video',),
         # ('pose',),
         ('accel',),
+        #('audio',),
+        #('audio', 'accel',),
     ]
 
     res = {}

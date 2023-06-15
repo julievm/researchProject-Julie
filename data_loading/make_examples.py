@@ -4,9 +4,12 @@ import pickle
 import utils
 
 accel_path = "../data/subj_accel_interp.pkl"
+audio_path = "../data/audio.pkl"
 
 def make_all_examples(Num, windowSize, label_length_fs, numberOfExperiment=None, category=None):
     accel_path = "../data/subj_accel_interp.pkl"
+
+    audio_path = "../data/audio.pkl"
 
     # successful train ground truth label
     realized_intention_label_path = "../preprocess/audio/successful_train_ground_truth/"
@@ -23,7 +26,7 @@ def make_all_examples(Num, windowSize, label_length_fs, numberOfExperiment=None,
 
     if Num == 1:
         temp = all_intention_label_path + str(windowSize) + "s/"
-        maker = utils.Maker(accel_path=accel_path, all_sample_path=temp)
+        maker = utils.Maker(accel_path=accel_path, audio_path=audio_path, all_sample_path=temp)
         for index in range(0, numberOfExperiment):
             print("num : 1 -- ", index)
             all_test_samples = maker.make_all_examples(index, windowSize, label_length_fs)
@@ -31,7 +34,7 @@ def make_all_examples(Num, windowSize, label_length_fs, numberOfExperiment=None,
 
     elif Num == 2:
         temp = realized_intention_label_path + str(windowSize) + "s/"
-        maker = utils.Maker(accel_path=accel_path, vad_path=temp)
+        maker = utils.Maker(accel_path=accel_path, audio_path=audio_path, vad_path=temp)
         for index in range(0, numberOfExperiment):
             print("num : 2 -- ", index)
             successful_test_samples = maker.make_test_examples(index, windowSize, label_length_fs)
@@ -40,13 +43,13 @@ def make_all_examples(Num, windowSize, label_length_fs, numberOfExperiment=None,
     elif Num == 0:
         print("Generate training pkl")
         temp = realized_intention_label_path + str(windowSize) + "s/"
-        maker = utils.Maker(accel_path=accel_path, vad_path=temp)
+        maker = utils.Maker(accel_path=accel_path, audio_path=audio_path, vad_path=temp)
         train_samples = maker.make_train_examples(windowSize, label_length_fs)
         pickle.dump(train_samples, open('../data/train_pkl/' + str(windowSize) + "s/" + '_INTS_train.pkl', 'wb'))
 
     elif Num == 3 or Num == 4 or Num == 5:
         temp = unrealized_intention_path + str(category) + "/" + str(windowSize) + "s/"
-        maker = utils.Maker(accel_path=accel_path, unsuccessful_vad_path=temp)
+        maker = utils.Maker(accel_path=accel_path, audio_path=audio_path, unsuccessful_vad_path=temp)
         for index in range(0, numberOfExperiment):
             print("num : 3-4-5 -- ", index, "  ", str(category))
             all_test_samples = maker.make_unsuccessful_examples(start_pid, index, windowSize, label_length_fs, category)

@@ -95,13 +95,13 @@ def do_cross_validation(do_train, ds, last_test_ds, input_modalities, seed, pref
                                                                         weights_path=weights_path)
             model = trainer.model
 
-            torch.save(model.state_dict(), "model_temp_accel.pt")
+            torch.save(model.state_dict(), "model_temp_audio10.pt")
 
         else:
 
 
-            model = System(['accel', 'audio'], 'classification')
-            model.load_state_dict(torch.load("model_temp_accel.pt"))
+            model = System('audio', 'classification')
+            model.load_state_dict(torch.load("model_temp_audio10.pt"))
 
         # select the best model
 
@@ -138,6 +138,7 @@ def do_run(examples, test_examples, input_modalities,
             model_label_modality = test_label_modality
     '''
     print(f'Using {len(examples)} examples')
+    print(f'Example {examples[0]}')
     print(f'Using {len(test_examples)} test examples')
     # create the feature datasets
     extractors = {}
@@ -147,9 +148,10 @@ def do_run(examples, test_examples, input_modalities,
         accel_ds_path = '../data/subj_accel_interp.pkl'
         extractors['accel'] = AccelExtractor(accel_ds_path)
 
-    if 'audio' in input_modalities:
-        audio_ds_path = '../data/audio.pkl'
-        extractors['audio'] = AudioExtractor(audio_ds_path)
+    # if 'audio' in input_modalities:
+    #     audio_ds_path = '../data/audio.pkl'
+    #     extractors['audio'] = AudioExtractor(audio_ds_path)
+    #     print("YAY WE ARE DOING THIS ")
 
     # extract data based on features selected
     ds = FatherDataset(examples, extractors)
@@ -214,8 +216,8 @@ def get_table(index_i, Num, windowSize, do_train=True, deterministic=True):
     all_input_modalities = [
         # ('video',),
         # ('pose',),
-        ('accel',),
-        #('audio',),
+        #('accel',),
+        ('audio',),
         #('audio', 'accel',),
     ]
 

@@ -72,7 +72,7 @@ if __name__ == '__main__':
     for window_size in range(1,5):
         print("window size : ", window_size)
         # experiment 0
-        make_all_examples(0, window_size, label_length_fs=20)
+        make_all_examples(0, window_size, label_length_fs=20, numberOfExperiment=100)
 
         # experiment 1
         make_all_examples(1, window_size, label_length_fs=20, numberOfExperiment=100)

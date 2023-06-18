@@ -7,6 +7,7 @@ raw_data_path = os.path.join(dataset_path, 'raw')
 raw_pose_path = os.path.join(raw_data_path, 'pose')
 raw_accel_path = os.path.join(raw_data_path, 'accel')
 raw_videos_path = os.path.join(raw_data_path, 'videos')
+raw_audio_path = os.path.join(raw_data_path, 'audio')
 
 processed_data_path = os.path.join(dataset_path, 'processed')
 processed_audio_path = os.path.join(processed_data_path, 'audio')
@@ -23,6 +24,7 @@ examples_path = os.path.join(dataset_path, 'examples.pkl')
 
 # own path
 accel_path = os.path.join(dataset_path, 'subj_accel_interp.pkl')
+audio_path = os.path.join(dataset_path, 'audio.pkl')
 
 
 # valid sections of the data (in frames)

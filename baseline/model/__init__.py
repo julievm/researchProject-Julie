@@ -22,7 +22,7 @@ class SegmentationFusionModel(torch.nn.Module):
             self.accel_head = AccelSegmentationhead(c_out=1, output_len=mask_len)
 
         if 'audio' in modalities:
-            self.audio_feature_extractor = AccelModelBodyNoPool(c_in=6)
+            self.audio_feature_extractor = AccelModelBodyNoPool(c_in=10)
             self.audio_head = AccelSegmentationhead(c_out=1, output_len=mask_len)
 
     def forward(self, batch: dict):

@@ -58,6 +58,7 @@ class FatherDataset(torch.utils.data.Dataset):
         #     print("shape: ", ex['vad'].shape, "  ", ex['vad'])
 
         items['label'] = np.stack([ex['vad'] for ex in examples])
+        items['audio'] = torch.from_numpy(np.stack([ex['audio'] for ex in examples])).float()
         #print(items['label'], "     waff")
 
         #print("type : ", type(items['label']), "  ", type(items['label']))
@@ -77,7 +78,7 @@ class FatherDataset(torch.utils.data.Dataset):
         # item['label'] = ex['interp_vad']
         item['label'] = ex['vad']
         item['index'] = idx
-
+        item['audio'] = torch.from_numpy(ex['audio']).float()
 
         return item
 

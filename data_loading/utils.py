@@ -176,12 +176,12 @@ class Maker():
                 temp_vad = self._get_vad(i, ini_time, end_time, 100)
                 interp_vad = self._interp_vad(temp_vad, 100, feature_fs)
 
-
                 examples.append({
                     'id': example_id,
                     'pid': i,
                     'ini_time': ini_time,
                     'end_time': end_time,
+                    'audio': self.audio[str(i)][ini_time].transpose().astype(np.float32),
                     # data
                     'vad': interp_vad
                 })
@@ -226,6 +226,7 @@ class Maker():
                     'pid': i,
                     'ini_time': test_ini_time,
                     'end_time': test_end_time,
+                    'audio': self.audio[str(i)][test_ini_time].transpose().astype(np.float32),
                     # data
                     'vad': interp_vad
                 })
@@ -271,6 +272,7 @@ class Maker():
                     'pid': i,
                     'ini_time': all_ini_time,
                     'end_time': all_end_time,
+                    'audio': self.audio[str(i)][all_ini_time].transpose().astype(np.float32),
                     # data
                     'vad': interp_vad
                 })
@@ -317,6 +319,7 @@ class Maker():
                         'pid': i,
                         'ini_time': all_ini_time,
                         'end_time': all_end_time,
+                        'audio': self.audio[str(i)][all_ini_time].transpose().astype(np.float32),
                         # data
                         'vad': interp_vad
                     })
